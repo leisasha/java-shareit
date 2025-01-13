@@ -8,7 +8,6 @@ import ru.practicum.shareit.item.dal.ItemStorage;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.util.Collection;
@@ -23,33 +22,22 @@ public class ItemServiceImpl implements ItemService {
     private final UserService userService;
 
     public ItemDto createItem(ItemDto itemDto, long userId) {
-        validationDataEmpty(itemDto, userId);
+        validationDataEmpty(userId);
 
-        if (itemDto.getName().isBlank()) {
-            throw new ValidationException("Наименование не должено быть пустым");
-        }
-        if (itemDto.getDescription().isBlank()) {
-            throw new ValidationException("Описание не должено быть пустым");
-        }
-
-        UserDto userDto = userService.getUserById(userId);
+        userService.getUserById(userId);
 
         return ItemMapper.toItemDto(itemStorage.create(itemDto, userId));
     }
 
     public ItemDto updateItem(ItemDto itemDto, long itemId, long userId) {
-        validationDataEmpty(itemDto, userId);
-        UserDto userDto = userService.getUserById(userId);
+        validationDataEmpty(userId);
+        userService.getUserById(userId);
 
         Item updatedItem = itemStorage.getItemById(itemId)
                 .orElseThrow(() -> new NotFoundException("Item не найден"));
 
         if (updatedItem.getOwner() != userId) {
             throw new NotFoundException("Редактировать вещь может только её владелец");
-        }
-
-        if (itemDto.getAvailable() == null) {
-            itemDto.setAvailable(false);
         }
 
         return ItemMapper.toItemDto(itemStorage.update(updatedItem, itemDto, userId));
@@ -88,7 +76,7 @@ public class ItemServiceImpl implements ItemService {
                 .collect(Collectors.toList());
     }
 
-    private void validationDataEmpty(ItemDto itemDto, long userId) {
+    private void validationDataEmpty(long userId) {
         if (userId == 0) {
             throw new ValidationException("userId не должено быть пустым");
         }

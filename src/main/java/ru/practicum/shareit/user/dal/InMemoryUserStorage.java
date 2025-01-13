@@ -24,8 +24,7 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     public User update(User user, UserDto userDto) {
-        user.setName(userDto.getName());
-        user.setEmail(userDto.getEmail());
+        UserMapper.updateUserFields(user, userDto);
         log.trace("Экземпляр {} изменен", user);
         return user;
     }

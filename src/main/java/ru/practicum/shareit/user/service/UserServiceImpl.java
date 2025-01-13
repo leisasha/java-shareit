@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.ConflictException;
 import ru.practicum.shareit.exception.NotFoundException;
-import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.user.dal.UserStorage;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.UserMapper;
@@ -20,8 +19,6 @@ public class UserServiceImpl implements UserService {
     private final UserStorage userStorage;
 
     public UserDto createUser(UserDto userDto) {
-        checkEmailForEmpty(userDto.getEmail());
-
         Optional<User> alreadyExistUser = userStorage.findByEmail(userDto.getEmail());
         if (alreadyExistUser.isPresent()) {
             throw new ConflictException("Данный имейл уже используется");
@@ -57,11 +54,5 @@ public class UserServiceImpl implements UserService {
 
     public void deleteUser(long userId) {
         userStorage.deleteUser(userId);
-    }
-
-    private void checkEmailForEmpty(String email) {
-        if (email == null || email.isBlank() || !email.contains("@")) {
-            throw new ValidationException("Имейл должен быть указан");
-        }
     }
 }

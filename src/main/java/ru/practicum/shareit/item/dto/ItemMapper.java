@@ -24,4 +24,16 @@ public final class ItemMapper {
                 item.isAvailable()
         );
     }
+
+    public static void updateItemFields(Item item, ItemDto request) {
+        if (request.getName() != null && !request.getName().isBlank()) {
+            item.setName(request.getName());
+        }
+        if (request.getDescription() != null && !request.getDescription().isBlank()) {
+            item.setDescription(request.getDescription());
+        }
+        if (request.getAvailable() != null) {
+            item.setAvailable(request.getAvailable());
+        }
+    }
 }

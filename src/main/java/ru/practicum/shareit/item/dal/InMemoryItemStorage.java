@@ -24,9 +24,7 @@ public class InMemoryItemStorage implements ItemStorage {
     }
 
     public Item update(Item item, ItemDto itemDto, long userId) {
-        item.setName(itemDto.getName());
-        item.setDescription(itemDto.getDescription());
-        item.setAvailable(itemDto.getAvailable());
+        ItemMapper.updateItemFields(item, itemDto);
         log.trace("Экземпляр {} изменен", item);
         return item;
     }
