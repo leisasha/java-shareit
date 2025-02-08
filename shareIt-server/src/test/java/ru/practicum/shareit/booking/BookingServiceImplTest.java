@@ -35,6 +35,12 @@ public class BookingServiceImplTest {
     private Booking booking;
     private BookingDto bookingDto;
 
+    private Booking currentBooking;
+    private Booking pastBooking;
+    private Booking futureBooking;
+    private Booking waitingBooking;
+    private Booking rejectedBooking;
+
     @BeforeEach
     void setUp() {
         bookingRepository = mock(BookingRepository.class);
@@ -47,6 +53,14 @@ public class BookingServiceImplTest {
         booking = new Booking(1L, LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(2), item, user, Status.WAITING);
         bookingDto = BookingMapper.toBookingDto(booking);
         bookingDto.setItemId(item.getId());
+
+        LocalDateTime now = LocalDateTime.now();
+
+        currentBooking = new Booking(1L, now.minusHours(1), now.plusHours(1), item, user, Status.APPROVED);
+        pastBooking = new Booking(2L, now.minusDays(2), now.minusDays(1), item, user, Status.APPROVED);
+        futureBooking = new Booking(3L, now.plusDays(1), now.plusDays(2), item, user, Status.APPROVED);
+        waitingBooking = new Booking(4L, now.plusDays(1), now.plusDays(2), item, user, Status.WAITING);
+        rejectedBooking = new Booking(5L, now.plusDays(1), now.plusDays(2), item, user, Status.REJECTED);
     }
 
     @Test
@@ -155,13 +169,6 @@ public class BookingServiceImplTest {
     }
 
     @Test
-    void getUserBookingsShouldThrowNotFoundExceptionWhenUserNotFound() {
-        when(userRepository.existsById(anyLong())).thenReturn(false);
-
-        assertThrows(NotFoundException.class, () -> bookingService.getUserBookings(999L, "ALL"));
-    }
-
-    @Test
     void getOwnerBookingsShouldReturnBookings() {
         when(userRepository.existsById(user.getId())).thenReturn(true);
         when(bookingRepository.findByItemOwnerOrderByStartDesc(user.getId())).thenReturn(List.of(booking));
@@ -178,5 +185,101 @@ public class BookingServiceImplTest {
         when(userRepository.existsById(anyLong())).thenReturn(false);
 
         assertThrows(NotFoundException.class, () -> bookingService.getOwnerBookings(999L, "ALL"));
+    }
+
+    @Test
+    void getUserBookingsShouldReturnRejectedBookings() {
+        when(userRepository.existsById(user.getId())).thenReturn(true);
+        when(bookingRepository.findByBookerIdAndStatusOrderByStartDesc(user.getId(), Status.REJECTED))
+                .thenReturn(List.of(rejectedBooking));
+
+        List<BookingDto> result = bookingService.getUserBookings(user.getId(), "REJECTED");
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(rejectedBooking.getId(), result.get(0).getId());
+        verify(bookingRepository, times(1))
+                .findByBookerIdAndStatusOrderByStartDesc(user.getId(), Status.REJECTED);
+    }
+
+    @Test
+    void getUserBookingsShouldReturnFutureBookings() {
+        when(userRepository.existsById(user.getId())).thenReturn(true);
+        when(bookingRepository.findByBookerIdAndStartAfterOrderByStartDesc(eq(user.getId()), any()))
+                .thenReturn(List.of(futureBooking));
+
+        List<BookingDto> result = bookingService.getUserBookings(user.getId(), "FUTURE");
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(futureBooking.getId(), result.get(0).getId());
+        verify(bookingRepository, times(1))
+                .findByBookerIdAndStartAfterOrderByStartDesc(eq(user.getId()), any());
+    }
+
+    @Test
+    void getUserBookingsShouldReturnWaitingBookings() {
+        when(userRepository.existsById(user.getId())).thenReturn(true);
+        when(bookingRepository.findByBookerIdAndStatusOrderByStartDesc(user.getId(), Status.WAITING))
+                .thenReturn(List.of(waitingBooking));
+
+        List<BookingDto> result = bookingService.getUserBookings(user.getId(), "WAITING");
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(waitingBooking.getId(), result.get(0).getId());
+        verify(bookingRepository, times(1))
+                .findByBookerIdAndStatusOrderByStartDesc(user.getId(), Status.WAITING);
+    }
+
+    @Test
+    void getUserBookingsShouldThrowNotFoundExceptionWhenUserNotFound() {
+        when(userRepository.existsById(anyLong())).thenReturn(false);
+
+        assertThrows(NotFoundException.class, () -> bookingService.getUserBookings(999L, "ALL"));
+        verify(bookingRepository, never()).findByBookerIdOrderByStartDesc(anyLong());
+    }
+
+    @Test
+    void getUserBookingsShouldReturnAllBookings() {
+        when(userRepository.existsById(user.getId())).thenReturn(true);
+        when(bookingRepository.findByBookerIdOrderByStartDesc(user.getId()))
+                .thenReturn(List.of(currentBooking, pastBooking, futureBooking, waitingBooking, rejectedBooking));
+
+        List<BookingDto> result = bookingService.getUserBookings(user.getId(), "ALL");
+
+        assertNotNull(result);
+        assertEquals(5, result.size());
+        verify(bookingRepository, times(1)).findByBookerIdOrderByStartDesc(user.getId());
+    }
+
+    @Test
+    void getUserBookingsShouldReturnCurrentBookings() {
+        when(userRepository.existsById(user.getId())).thenReturn(true);
+        when(bookingRepository.findByBookerIdAndStartBeforeAndEndAfterOrderByStartDesc(eq(user.getId()), any(), any()))
+                .thenReturn(List.of(currentBooking));
+
+        List<BookingDto> result = bookingService.getUserBookings(user.getId(), "CURRENT");
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(currentBooking.getId(), result.get(0).getId());
+        verify(bookingRepository, times(1))
+                .findByBookerIdAndStartBeforeAndEndAfterOrderByStartDesc(eq(user.getId()), any(), any());
+    }
+
+    @Test
+    void getUserBookingsShouldReturnPastBookings() {
+        when(userRepository.existsById(user.getId())).thenReturn(true);
+        when(bookingRepository.findByBookerIdAndEndBeforeOrderByStartDesc(eq(user.getId()), any()))
+                .thenReturn(List.of(pastBooking));
+
+        List<BookingDto> result = bookingService.getUserBookings(user.getId(), "PAST");
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(pastBooking.getId(), result.get(0).getId());
+        verify(bookingRepository, times(1))
+                .findByBookerIdAndEndBeforeOrderByStartDesc(eq(user.getId()), any());
     }
 }
