@@ -48,7 +48,6 @@ public class ItemServiceImpl implements ItemService {
         }
 
         item = itemRepository.save(item);
-        log.error("Item создан в БД. itemId = " + item.getId() + ", userId = " + item.getOwner());
         return ItemMapper.toItemDto(item);
     }
 
@@ -147,10 +146,6 @@ public class ItemServiceImpl implements ItemService {
 
         boolean hasCompletedBooking = bookingRepository.existsByItemIdAndBookerIdAndStatusAndEndBefore(
                 itemId, userId, Status.APPROVED, LocalDateTime.now());
-
-        log.error("hasCompletedBooking = " + hasCompletedBooking);
-        log.error("itemId = " + itemId + ", userId = " + userId);
-        log.error("Current time = " + LocalDateTime.now());
 
         if (!hasCompletedBooking) {
             throw new ValidationException("Пользователь не может оставить комментарий без завершенного бронирования");

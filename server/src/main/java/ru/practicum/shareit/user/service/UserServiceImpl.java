@@ -26,7 +26,6 @@ public class UserServiceImpl implements UserService {
         }
 
         User user = userRepository.save(UserMapper.toUser(userDto, 0));
-        log.error("Пользователь создан в БД: userId = " + user.getId());
         return UserMapper.toUserDto(user);
     }
 

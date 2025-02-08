@@ -43,10 +43,6 @@ public class BookingServiceImpl implements BookingService {
 
         Booking booking = BookingMapper.toBooking(bookingDto, booker, item, Status.WAITING);
         Booking savedBooking = bookingRepository.save(booking);
-        log.error("Booking создан в БД. bookingId = " + savedBooking.getId() + ", status = " + savedBooking.getStatus());
-        log.error("start = " + savedBooking.getStart() + ", end = " + savedBooking.getEnd());
-        log.error("itemId = " + savedBooking.getItem().getId());
-        log.error("userId = " + savedBooking.getItem().getOwner());
         return BookingMapper.toBookingDto(savedBooking);
     }
 
@@ -64,12 +60,6 @@ public class BookingServiceImpl implements BookingService {
         }
 
         booking.setStatus(approved ? Status.APPROVED : Status.REJECTED);
-        log.error("Booking APPROVED = " + approved);
-        log.error("bookingId = " + booking.getId() + ", status = " + booking.getStatus());
-        log.error("start = " + booking.getStart() + ", end = " + booking.getEnd());
-        log.error("itemId = " + booking.getItem().getId());
-        log.error("userId = " + booking.getItem().getOwner());
-
         bookingRepository.save(booking);
 
         return BookingMapper.toBookingDto(booking);
